@@ -415,11 +415,6 @@ SET {state} = 'queued', {process_after} = %s
 WHERE {id} = %s
 `
 
-type LogContentEntry struct {
-	Command []string `json:"command"`
-	Out     string   `json:"out"`
-}
-
 // AddLogContents updates the log contents of the record.
 func (s *store) AddLogContents(ctx context.Context, id int, command []string, out string) error {
 	payload, err := json.Marshal(LogContentEntry{

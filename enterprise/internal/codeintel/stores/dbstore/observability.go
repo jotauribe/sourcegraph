@@ -52,7 +52,6 @@ type operations struct {
 	requeueIndex                          *observation.Operation
 	resetIndexableRepositories            *observation.Operation
 	sameRepoPager                         *observation.Operation
-	setIndexLogContents                   *observation.Operation
 	softDeleteOldDumps                    *observation.Operation
 	updateIndexableRepository             *observation.Operation
 	updatePackageReferences               *observation.Operation
@@ -120,7 +119,6 @@ func makeOperations(observationContext *observation.Context) *operations {
 		requeueIndex:                          op("RequeueIndex"),
 		resetIndexableRepositories:            op("ResetIndexableRepositories"),
 		sameRepoPager:                         op("SameRepoPager"),
-		setIndexLogContents:                   op("SetIndexLogContents"),
 		softDeleteOldDumps:                    op("SoftDeleteOldDumps"),
 		updateIndexableRepository:             op("UpdateIndexableRepository"),
 		updatePackageReferences:               op("UpdatePackageReferences"),

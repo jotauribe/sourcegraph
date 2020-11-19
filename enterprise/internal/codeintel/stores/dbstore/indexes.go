@@ -9,7 +9,6 @@ import (
 	"github.com/lib/pq"
 	"github.com/opentracing/opentracing-go/log"
 	"github.com/sourcegraph/sourcegraph/internal/db/basestore"
-	"github.com/sourcegraph/sourcegraph/internal/db/dbutil"
 	"github.com/sourcegraph/sourcegraph/internal/observation"
 	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
@@ -18,25 +17,25 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
-	ID             int          `json:"id"`
-	Commit         string       `json:"commit"`
-	QueuedAt       time.Time    `json:"queuedAt"`
-	State          string       `json:"state"`
-	FailureMessage *string      `json:"failureMessage"`
-	StartedAt      *time.Time   `json:"startedAt"`
-	FinishedAt     *time.Time   `json:"finishedAt"`
-	ProcessAfter   *time.Time   `json:"processAfter"`
-	NumResets      int          `json:"numResets"`
-	NumFailures    int          `json:"numFailures"`
-	RepositoryID   int          `json:"repositoryId"`
-	RepositoryName string       `json:"repositoryName"`
-	DockerSteps    []DockerStep `json:"docker_steps"`
-	Root           string       `json:"root"`
-	Indexer        string       `json:"indexer"`
-	IndexerArgs    []string     `json:"indexer_args"`
-	Outfile        string       `json:"outfile"`
-	LogContents    string       `json:"log_contents"`
-	Rank           *int         `json:"placeInQueue"`
+	ID             int                             `json:"id"`
+	Commit         string                          `json:"commit"`
+	QueuedAt       time.Time                       `json:"queuedAt"`
+	State          string                          `json:"state"`
+	FailureMessage *string                         `json:"failureMessage"`
+	StartedAt      *time.Time                      `json:"startedAt"`
+	FinishedAt     *time.Time                      `json:"finishedAt"`
+	ProcessAfter   *time.Time                      `json:"processAfter"`
+	NumResets      int                             `json:"numResets"`
+	NumFailures    int                             `json:"numFailures"`
+	RepositoryID   int                             `json:"repositoryId"`
+	RepositoryName string                          `json:"repositoryName"`
+	DockerSteps    []DockerStep                    `json:"docker_steps"`
+	Root           string                          `json:"root"`
+	Indexer        string                          `json:"indexer"`
+	IndexerArgs    []string                        `json:"indexer_args"`
+	Outfile        string                          `json:"outfile"`
+	LogContents    []dbworkerstore.LogContentEntry `json:"log_contents"`
+	Rank           *int                            `json:"placeInQueue"`
 }
 
 func (i Index) RecordID() int {
@@ -71,7 +70,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.Indexer,
 			pq.Array(&index.IndexerArgs),
 			&index.Outfile,
-			&dbutil.NullString{S: &index.LogContents},
+			pq.Array(&index.LogContents),
 			&index.Rank,
 		); err != nil {
 			return nil, err
@@ -312,7 +311,7 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
-			index.LogContents,
+			pq.Array(index.LogContents),
 		),
 	))
 
@@ -370,20 +369,6 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 }
 
 var IndexColumnsWithNullRank = indexColumnsWithNullRank
-
-// SetIndexLogContents updates the log contents fo the index.
-func (s *Store) SetIndexLogContents(ctx context.Context, indexID int, contents string) (err error) {
-	ctx, endObservation := s.operations.setIndexLogContents.With(ctx, &err, observation.Args{LogFields: []log.Field{
-		log.Int("indexID", indexID),
-	}})
-	defer endObservation(1, observation.Args{})
-
-	return s.Store.Exec(ctx, sqlf.Sprintf(`
-		UPDATE lsif_indexes
-		SET log_contents = %s
-		WHERE id = %s
-	`, contents, indexID))
-}
 
 // DequeueIndex selects the oldest queued index and locks it with a transaction. If there is such an index,
 // the index is returned along with a store instance which wraps the transaction. This transaction must be

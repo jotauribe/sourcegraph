@@ -166,7 +166,7 @@ func insertIndexes(t *testing.T, db *sql.DB, indexes ...Index) {
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
-			index.LogContents,
+			pq.Array(index.LogContents),
 		)
 
 		if _, err := db.ExecContext(context.Background(), query.Query(sqlf.PostgresBindVar), query.Args()...); err != nil {
