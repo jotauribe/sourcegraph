@@ -354,7 +354,7 @@ func TestMarkIndexComplete(t *testing.T) {
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
 	if err := store.MarkIndexComplete(context.Background(), 1); err != nil {
-		t.Fatalf("unexpected error marking index as complete: %s", err)
+		t.Fatalf("unexpected error marking index as completed: %s", err)
 	}
 
 	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {
@@ -376,7 +376,7 @@ func TestMarkIndexErrored(t *testing.T) {
 	insertIndexes(t, dbconn.Global, Index{ID: 1, State: "queued"})
 
 	if err := store.MarkIndexErrored(context.Background(), 1, "oops"); err != nil {
-		t.Fatalf("unexpected error marking index as complete: %s", err)
+		t.Fatalf("unexpected error marking index as completed: %s", err)
 	}
 
 	if index, exists, err := store.GetIndexByID(context.Background(), 1); err != nil {

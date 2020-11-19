@@ -2,6 +2,8 @@ package store
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"sort"
 	"testing"
 	"time"
@@ -347,7 +349,7 @@ func TestStoreRequeue(t *testing.T) {
 	after := testNow().Add(time.Hour)
 
 	if err := testStore(defaultTestStoreOptions).Requeue(context.Background(), 1, after); err != nil {
-		t.Fatalf("unexpected error requeueing index: %s", err)
+		t.Fatalf("unexpected error requeueing record: %s", err)
 	}
 
 	rows, err := dbconn.Global.Query(`SELECT state, process_after FROM workerutil_test WHERE id = 1`)
@@ -374,7 +376,7 @@ func TestStoreRequeue(t *testing.T) {
 	}
 }
 
-func TestStoreSetLogContents(t *testing.T) {
+func TestStoreAddLogContents(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -385,19 +387,38 @@ func TestStoreSetLogContents(t *testing.T) {
 		t.Fatalf("unexpected error inserting records: %s", err)
 	}
 
-	if err := testStore(defaultTestStoreOptions).SetLogContents(context.Background(), 1, "<load payload>"); err != nil {
-		t.Fatalf("unexpected error marking upload as completed: %s", err)
+	numEntries := 5
+
+	for i := 0; i < numEntries; i++ {
+		command := []string{"ls", "-a", fmt.Sprintf("%d", i+1)}
+		payload := fmt.Sprintf("<load payload %d>", i+1)
+
+		if err := testStore(defaultTestStoreOptions).AddLogContents(context.Background(), 1, command, payload); err != nil {
+			t.Fatalf("unexpected error addd: %s", err)
+		}
 	}
 
-	contents, err := basestore.ScanStrings(dbconn.Global.Query(`SELECT log_contents FROM workerutil_test WHERE id = 1`))
+	contents, err := basestore.ScanStrings(dbconn.Global.Query(`SELECT unnest(log_contents)::text FROM workerutil_test WHERE id = 1`))
 	if err != nil {
 		t.Fatalf("unexpected error scanning record: %s", err)
 	}
-	if len(contents) != 1 {
-		t.Fatal("expected record to exist")
+	if len(contents) != numEntries {
+		t.Fatalf("unexpected number of payloads. want=%d have=%d", numEntries, len(contents))
 	}
-	if contents[0] != "<load payload>" {
-		t.Errorf("unexpected log contents. want=%q have=%q", "<load payload>", contents[0])
+
+	for i := 0; i < numEntries; i++ {
+		var entry LogContentEntry
+		if err := json.Unmarshal([]byte(contents[i]), &entry); err != nil {
+			t.Fatalf("unexpected error decoding entry: %s", err)
+		}
+
+		expected := LogContentEntry{
+			Command: []string{"ls", "-a", fmt.Sprintf("%d", i+1)},
+			Out:     fmt.Sprintf("<load payload %d>", i+1),
+		}
+		if diff := cmp.Diff(expected, entry); diff != "" {
+			t.Errorf("unexpected entry (-want +got):\n%s", diff)
+		}
 	}
 }
 
@@ -414,7 +435,7 @@ func TestStoreMarkComplete(t *testing.T) {
 
 	marked, err := testStore(defaultTestStoreOptions).MarkComplete(context.Background(), 1)
 	if err != nil {
-		t.Fatalf("unexpected error marking upload as completed: %s", err)
+		t.Fatalf("unexpected error marking record as completed: %s", err)
 	}
 	if !marked {
 		t.Fatalf("expected record to be marked")
@@ -456,7 +477,7 @@ func TestStoreMarkCompleteNotProcessing(t *testing.T) {
 
 	marked, err := testStore(defaultTestStoreOptions).MarkComplete(context.Background(), 1)
 	if err != nil {
-		t.Fatalf("unexpected error marking upload as completed: %s", err)
+		t.Fatalf("unexpected error marking record as completed: %s", err)
 	}
 	if marked {
 		t.Fatalf("expected record not to be marked")
@@ -498,7 +519,7 @@ func TestStoreMarkErrored(t *testing.T) {
 
 	marked, err := testStore(defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
 	if err != nil {
-		t.Fatalf("unexpected error marking upload as completed: %s", err)
+		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
 	if !marked {
 		t.Fatalf("expected record to be marked")
@@ -540,7 +561,7 @@ func TestStoreMarkErroredAlreadyCompleted(t *testing.T) {
 
 	marked, err := testStore(defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
 	if err != nil {
-		t.Fatalf("unexpected error marking upload as completed: %s", err)
+		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
 	if !marked {
 		t.Fatalf("expected record to be marked")
@@ -582,7 +603,7 @@ func TestStoreMarkErroredAlreadyErrored(t *testing.T) {
 
 	marked, err := testStore(defaultTestStoreOptions).MarkErrored(context.Background(), 1, "new message")
 	if err != nil {
-		t.Fatalf("unexpected error marking upload as completed: %s", err)
+		t.Fatalf("unexpected error marking record as errored: %s", err)
 	}
 	if marked {
 		t.Fatalf("expected record not to be marked")

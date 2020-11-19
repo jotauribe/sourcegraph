@@ -3,6 +3,7 @@ package store
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"fmt"
 	"strings"
 	"time"
@@ -43,8 +44,8 @@ type Store interface {
 	// the next dequeue of this record can be performed.
 	Requeue(ctx context.Context, id int, after time.Time) error
 
-	// SetLogContents updates the log contents of the record.
-	SetLogContents(ctx context.Context, id int, logContents string) error
+	// AddLogContents updates the log contents of the record.
+	AddLogContents(ctx context.Context, id int, command []string, out string) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
@@ -86,7 +87,7 @@ type Options struct {
 	//   - process_after: timestamp with time zone
 	//   - num_resets: integer not null
 	//   - num_failures: integer not null
-	//   - log_contents: text
+	//   - log_contents: json[] (each entry has the form of `LogContentEntry`)
 	//
 	// The names of these columns may be customized based on the table name by adding a replacement
 	// pair in the AlternateColumnNames mapping.
@@ -414,20 +415,33 @@ SET {state} = 'queued', {process_after} = %s
 WHERE {id} = %s
 `
 
-// SetLogContents updates the log contents of the record.
-func (s *store) SetLogContents(ctx context.Context, id int, logContents string) error {
+type LogContentEntry struct {
+	Command []string `json:"command"`
+	Out     string   `json:"out"`
+}
+
+// AddLogContents updates the log contents of the record.
+func (s *store) AddLogContents(ctx context.Context, id int, command []string, out string) error {
+	payload, err := json.Marshal(LogContentEntry{
+		Command: command,
+		Out:     out,
+	})
+	if err != nil {
+		return err
+	}
+
 	return s.Exec(ctx, s.formatQuery(
-		setLogContentsQuery,
+		addLogContentsQuery,
 		quote(s.options.TableName),
-		logContents,
+		string(payload),
 		id,
 	))
 }
 
-const setLogContentsQuery = `
--- source: internal/workerutil/store.go:SetLogContents
+const addLogContentsQuery = `
+-- source: internal/workerutil/store.go:AddLogContents
 UPDATE %s
-SET {log_contents} = %s
+SET {log_contents} = {log_contents} || %s::json
 WHERE {id} = %s
 `
 

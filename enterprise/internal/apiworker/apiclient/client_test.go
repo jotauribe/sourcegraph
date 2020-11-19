@@ -77,37 +77,37 @@ func TestDequeueBadResponse(t *testing.T) {
 	})
 }
 
-func TestSetLogContents(t *testing.T) {
+func TestAddLogContents(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/setLogContents",
+		expectedPath:     "/.executors/queue/test_queue/addLogContents",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "payload": "<log payload>"}`,
+		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "command": ["ls", "-a"], "out": "<log payload>"}`,
 		responseStatus:   http.StatusNoContent,
 		responsePayload:  ``,
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if err := client.SetLogContents(context.Background(), "test_queue", 42, "<log payload>"); err != nil {
-			t.Fatalf("unexpected error setting log contents: %s", err)
+		if err := client.AddLogContents(context.Background(), "test_queue", 42, []string{"ls", "-a"}, "<log payload>"); err != nil {
+			t.Fatalf("unexpected error updating log contents: %s", err)
 		}
 	})
 }
 
-func TestSetLogContentsBadResponse(t *testing.T) {
+func TestAddLogContentsBadResponse(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/setLogContents",
+		expectedPath:     "/.executors/queue/test_queue/addLogContents",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
-		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "payload": "<log payload>"}`,
+		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "command": ["ls", "-a"], "out": "<log payload>"}`,
 		responseStatus:   http.StatusInternalServerError,
 		responsePayload:  ``,
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if err := client.SetLogContents(context.Background(), "test_queue", 42, "<log payload>"); err == nil {
+		if err := client.AddLogContents(context.Background(), "test_queue", 42, []string{"ls", "-a"}, "<log payload>"); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})

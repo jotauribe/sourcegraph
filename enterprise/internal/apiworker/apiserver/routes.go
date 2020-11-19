@@ -22,7 +22,7 @@ func (h *handler) setupRoutes(router *mux.Router) {
 
 	routes := map[string]func(w http.ResponseWriter, r *http.Request){
 		"dequeue":        h.handleDequeue,
-		"setLogContents": h.handleSetLogContents,
+		"addLogContents": h.handleAddLogContents,
 		"markComplete":   h.handleMarkComplete,
 		"markErrored":    h.handleMarkErrored,
 	}
@@ -47,12 +47,12 @@ func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// POST /{queueName}/setLogContents
-func (h *handler) handleSetLogContents(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.SetLogRequest
+// POST /{queueName}/addLogContents
+func (h *handler) handleAddLogContents(w http.ResponseWriter, r *http.Request) {
+	var payload apiclient.AddLogRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.setLogContents(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.Contents)
+		err := h.addLogContents(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.Command, payload.Out)
 		return http.StatusNoContent, nil, err
 	})
 }

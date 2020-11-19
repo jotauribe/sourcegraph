@@ -17,6 +17,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store)
 // used for unit testing.
 type MockStore struct {
+	// AddLogContentsFunc is an instance of a mock function object
+	// controlling the behavior of the method AddLogContents.
+	AddLogContentsFunc *StoreAddLogContentsFunc
 	// DequeueFunc is an instance of a mock function object controlling the
 	// behavior of the method Dequeue.
 	DequeueFunc *StoreDequeueFunc
@@ -45,15 +48,17 @@ type MockStore struct {
 	// ResetStalledFunc is an instance of a mock function object controlling
 	// the behavior of the method ResetStalled.
 	ResetStalledFunc *StoreResetStalledFunc
-	// SetLogContentsFunc is an instance of a mock function object
-	// controlling the behavior of the method SetLogContents.
-	SetLogContentsFunc *StoreSetLogContentsFunc
 }
 
 // NewMockStore creates a new mock of the Store interface. All methods
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
+		AddLogContentsFunc: &StoreAddLogContentsFunc{
+			defaultHook: func(context.Context, int, []string, string) error {
+				return nil
+			},
+		},
 		DequeueFunc: &StoreDequeueFunc{
 			defaultHook: func(context.Context, []*sqlf.Query) (workerutil.Record, store.Store, bool, error) {
 				return nil, nil, false, nil
@@ -99,11 +104,6 @@ func NewMockStore() *MockStore {
 				return nil, nil, nil
 			},
 		},
-		SetLogContentsFunc: &StoreSetLogContentsFunc{
-			defaultHook: func(context.Context, int, string) error {
-				return nil
-			},
-		},
 	}
 }
 
@@ -111,6 +111,9 @@ func NewMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
+		AddLogContentsFunc: &StoreAddLogContentsFunc{
+			defaultHook: i.AddLogContents,
+		},
 		DequeueFunc: &StoreDequeueFunc{
 			defaultHook: i.Dequeue,
 		},
@@ -138,10 +141,119 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 		ResetStalledFunc: &StoreResetStalledFunc{
 			defaultHook: i.ResetStalled,
 		},
-		SetLogContentsFunc: &StoreSetLogContentsFunc{
-			defaultHook: i.SetLogContents,
-		},
 	}
+}
+
+// StoreAddLogContentsFunc describes the behavior when the AddLogContents
+// method of the parent MockStore instance is invoked.
+type StoreAddLogContentsFunc struct {
+	defaultHook func(context.Context, int, []string, string) error
+	hooks       []func(context.Context, int, []string, string) error
+	history     []StoreAddLogContentsFuncCall
+	mutex       sync.Mutex
+}
+
+// AddLogContents delegates to the next hook function in the queue and
+// stores the parameter and result values of this invocation.
+func (m *MockStore) AddLogContents(v0 context.Context, v1 int, v2 []string, v3 string) error {
+	r0 := m.AddLogContentsFunc.nextHook()(v0, v1, v2, v3)
+	m.AddLogContentsFunc.appendCall(StoreAddLogContentsFuncCall{v0, v1, v2, v3, r0})
+	return r0
+}
+
+// SetDefaultHook sets function that is called when the AddLogContents
+// method of the parent MockStore instance is invoked and the hook queue is
+// empty.
+func (f *StoreAddLogContentsFunc) SetDefaultHook(hook func(context.Context, int, []string, string) error) {
+	f.defaultHook = hook
+}
+
+// PushHook adds a function to the end of hook queue. Each invocation of the
+// AddLogContents method of the parent MockStore instance inovkes the hook
+// at the front of the queue and discards it. After the queue is empty, the
+// default hook function is invoked for any future action.
+func (f *StoreAddLogContentsFunc) PushHook(hook func(context.Context, int, []string, string) error) {
+	f.mutex.Lock()
+	f.hooks = append(f.hooks, hook)
+	f.mutex.Unlock()
+}
+
+// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
+// the given values.
+func (f *StoreAddLogContentsFunc) SetDefaultReturn(r0 error) {
+	f.SetDefaultHook(func(context.Context, int, []string, string) error {
+		return r0
+	})
+}
+
+// PushReturn calls PushDefaultHook with a function that returns the given
+// values.
+func (f *StoreAddLogContentsFunc) PushReturn(r0 error) {
+	f.PushHook(func(context.Context, int, []string, string) error {
+		return r0
+	})
+}
+
+func (f *StoreAddLogContentsFunc) nextHook() func(context.Context, int, []string, string) error {
+	f.mutex.Lock()
+	defer f.mutex.Unlock()
+
+	if len(f.hooks) == 0 {
+		return f.defaultHook
+	}
+
+	hook := f.hooks[0]
+	f.hooks = f.hooks[1:]
+	return hook
+}
+
+func (f *StoreAddLogContentsFunc) appendCall(r0 StoreAddLogContentsFuncCall) {
+	f.mutex.Lock()
+	f.history = append(f.history, r0)
+	f.mutex.Unlock()
+}
+
+// History returns a sequence of StoreAddLogContentsFuncCall objects
+// describing the invocations of this function.
+func (f *StoreAddLogContentsFunc) History() []StoreAddLogContentsFuncCall {
+	f.mutex.Lock()
+	history := make([]StoreAddLogContentsFuncCall, len(f.history))
+	copy(history, f.history)
+	f.mutex.Unlock()
+
+	return history
+}
+
+// StoreAddLogContentsFuncCall is an object that describes an invocation of
+// method AddLogContents on an instance of MockStore.
+type StoreAddLogContentsFuncCall struct {
+	// Arg0 is the value of the 1st argument passed to this method
+	// invocation.
+	Arg0 context.Context
+	// Arg1 is the value of the 2nd argument passed to this method
+	// invocation.
+	Arg1 int
+	// Arg2 is the value of the 3rd argument passed to this method
+	// invocation.
+	Arg2 []string
+	// Arg3 is the value of the 4th argument passed to this method
+	// invocation.
+	Arg3 string
+	// Result0 is the value of the 1st result returned from this method
+	// invocation.
+	Result0 error
+}
+
+// Args returns an interface slice containing the arguments of this
+// invocation.
+func (c StoreAddLogContentsFuncCall) Args() []interface{} {
+	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
+}
+
+// Results returns an interface slice containing the results of this
+// invocation.
+func (c StoreAddLogContentsFuncCall) Results() []interface{} {
+	return []interface{}{c.Result0}
 }
 
 // StoreDequeueFunc describes the behavior when the Dequeue method of the
@@ -1120,113 +1232,4 @@ func (c StoreResetStalledFuncCall) Args() []interface{} {
 // invocation.
 func (c StoreResetStalledFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0, c.Result1, c.Result2}
-}
-
-// StoreSetLogContentsFunc describes the behavior when the SetLogContents
-// method of the parent MockStore instance is invoked.
-type StoreSetLogContentsFunc struct {
-	defaultHook func(context.Context, int, string) error
-	hooks       []func(context.Context, int, string) error
-	history     []StoreSetLogContentsFuncCall
-	mutex       sync.Mutex
-}
-
-// SetLogContents delegates to the next hook function in the queue and
-// stores the parameter and result values of this invocation.
-func (m *MockStore) SetLogContents(v0 context.Context, v1 int, v2 string) error {
-	r0 := m.SetLogContentsFunc.nextHook()(v0, v1, v2)
-	m.SetLogContentsFunc.appendCall(StoreSetLogContentsFuncCall{v0, v1, v2, r0})
-	return r0
-}
-
-// SetDefaultHook sets function that is called when the SetLogContents
-// method of the parent MockStore instance is invoked and the hook queue is
-// empty.
-func (f *StoreSetLogContentsFunc) SetDefaultHook(hook func(context.Context, int, string) error) {
-	f.defaultHook = hook
-}
-
-// PushHook adds a function to the end of hook queue. Each invocation of the
-// SetLogContents method of the parent MockStore instance inovkes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreSetLogContentsFunc) PushHook(hook func(context.Context, int, string) error) {
-	f.mutex.Lock()
-	f.hooks = append(f.hooks, hook)
-	f.mutex.Unlock()
-}
-
-// SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
-// the given values.
-func (f *StoreSetLogContentsFunc) SetDefaultReturn(r0 error) {
-	f.SetDefaultHook(func(context.Context, int, string) error {
-		return r0
-	})
-}
-
-// PushReturn calls PushDefaultHook with a function that returns the given
-// values.
-func (f *StoreSetLogContentsFunc) PushReturn(r0 error) {
-	f.PushHook(func(context.Context, int, string) error {
-		return r0
-	})
-}
-
-func (f *StoreSetLogContentsFunc) nextHook() func(context.Context, int, string) error {
-	f.mutex.Lock()
-	defer f.mutex.Unlock()
-
-	if len(f.hooks) == 0 {
-		return f.defaultHook
-	}
-
-	hook := f.hooks[0]
-	f.hooks = f.hooks[1:]
-	return hook
-}
-
-func (f *StoreSetLogContentsFunc) appendCall(r0 StoreSetLogContentsFuncCall) {
-	f.mutex.Lock()
-	f.history = append(f.history, r0)
-	f.mutex.Unlock()
-}
-
-// History returns a sequence of StoreSetLogContentsFuncCall objects
-// describing the invocations of this function.
-func (f *StoreSetLogContentsFunc) History() []StoreSetLogContentsFuncCall {
-	f.mutex.Lock()
-	history := make([]StoreSetLogContentsFuncCall, len(f.history))
-	copy(history, f.history)
-	f.mutex.Unlock()
-
-	return history
-}
-
-// StoreSetLogContentsFuncCall is an object that describes an invocation of
-// method SetLogContents on an instance of MockStore.
-type StoreSetLogContentsFuncCall struct {
-	// Arg0 is the value of the 1st argument passed to this method
-	// invocation.
-	Arg0 context.Context
-	// Arg1 is the value of the 2nd argument passed to this method
-	// invocation.
-	Arg1 int
-	// Arg2 is the value of the 3rd argument passed to this method
-	// invocation.
-	Arg2 string
-	// Result0 is the value of the 1st result returned from this method
-	// invocation.
-	Result0 error
-}
-
-// Args returns an interface slice containing the arguments of this
-// invocation.
-func (c StoreSetLogContentsFuncCall) Args() []interface{} {
-	return []interface{}{c.Arg0, c.Arg1, c.Arg2}
-}
-
-// Results returns an interface slice containing the results of this
-// invocation.
-func (c StoreSetLogContentsFuncCall) Results() []interface{} {
-	return []interface{}{c.Result0}
 }

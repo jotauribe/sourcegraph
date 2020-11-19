@@ -129,15 +129,15 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName string) (
 	return job, true, nil
 }
 
-// setLogContents calls SetLogContents for the given job. If the job identifier is not
+// addLogContents calls AddLogContents for the given job. If the job identifier is not
 // known, a false-valued flag is returned.
-func (m *handler) setLogContents(ctx context.Context, queueName, executorName string, jobID int, contents string) error {
+func (m *handler) addLogContents(ctx context.Context, queueName, executorName string, jobID int, command []string, out string) error {
 	job, err := m.findMeta(queueName, executorName, jobID, false)
 	if err != nil {
 		return err
 	}
 
-	if err := job.tx.SetLogContents(ctx, jobID, contents); err != nil {
+	if err := job.tx.AddLogContents(ctx, jobID, command, out); err != nil {
 		return err
 	}
 

@@ -61,10 +61,11 @@ type DequeueRequest struct {
 	ExecutorName string `json:"executorName"`
 }
 
-type SetLogRequest struct {
-	ExecutorName string `json:"executorName"`
-	JobID        int    `json:"jobId"`
-	Contents     string `json:"payload"`
+type AddLogRequest struct {
+	ExecutorName string   `json:"executorName"`
+	JobID        int      `json:"jobId"`
+	Command      []string `json:"command"`
+	Out          string   `json:"out"`
 }
 
 type MarkCompleteRequest struct {

@@ -34,24 +34,47 @@ func TestLogger(t *testing.T) {
 		)
 	}
 
-	expected := `
+	entries := logger.Entries()
+	if len(entries) != 3 {
+		t.Fatalf("unexpected number of entries. want=%d have=%d", 3, len(entries))
+	}
+
+	expected1 := `
 		stderr: BAZ1
-		stderr: BAZ2
-		stderr: BAZ3
 		stderr: FOO1 BAR1
-		stderr: FOO2 ******
-		stderr: FOO3 BAR3
 		stdout: baz1
-		stdout: ******
-		stdout: baz3
 		stdout: foo1 bar1
+		`
+	if diff := cmp.Diff([]string{"test", "1"}, entries[0].Command); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(normalizeLogs(expected1), normalizeLogs(entries[0].Out)); diff != "" {
+		t.Errorf("unexpected log output (-want +got):\n%s", diff)
+	}
+
+	expected2 := `
+		stderr: BAZ2
+		stderr: FOO2 ******
+		stdout: ******
 		stdout: foo2 bar2
+		`
+	if diff := cmp.Diff([]string{"test", "2"}, entries[1].Command); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(normalizeLogs(expected2), normalizeLogs(entries[1].Out)); diff != "" {
+		t.Errorf("unexpected log output (-want +got):\n%s", diff)
+	}
+
+	expected3 := `
+		stderr: BAZ3
+		stderr: FOO3 BAR3
+		stdout: baz3
 		stdout: foo3 bar3
-		test 1
-		test 2
-		test 3
-	`
-	if diff := cmp.Diff(normalizeLogs(expected), normalizeLogs(logger.String())); diff != "" {
+		`
+	if diff := cmp.Diff([]string{"test", "3"}, entries[2].Command); diff != "" {
+		t.Errorf("unexpected command (-want +got):\n%s", diff)
+	}
+	if diff := cmp.Diff(normalizeLogs(expected3), normalizeLogs(entries[2].Out)); diff != "" {
 		t.Errorf("unexpected log output (-want +got):\n%s", diff)
 	}
 }

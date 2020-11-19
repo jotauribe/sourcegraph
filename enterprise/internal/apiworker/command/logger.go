@@ -12,14 +12,13 @@ import (
 // Logger tracks command invocations and stores the command's output and
 // error stream values.
 type Logger struct {
-	m              sync.Mutex
 	redactedValues []string
-	logs           []*log
+	entries        []LogEntry
 }
 
-type log struct {
-	command []string
-	out     *bytes.Buffer
+type LogEntry struct {
+	Command []string
+	Out     string
 }
 
 // NewLogger creates a new logger instance with the given redacted values.
@@ -36,11 +35,6 @@ func NewLogger(redactedValues ...string) *Logger {
 // This method blocks.
 func (l *Logger) RecordCommand(command []string, stdout, stderr io.Reader) {
 	out := &bytes.Buffer{}
-
-	l.m.Lock()
-	l.logs = append(l.logs, &log{command: command, out: out})
-	l.m.Unlock()
-
 	var m sync.Mutex
 	var wg sync.WaitGroup
 
@@ -59,19 +53,23 @@ func (l *Logger) RecordCommand(command []string, stdout, stderr io.Reader) {
 	go readIntoBuf("stdout", stdout)
 	go readIntoBuf("stderr", stderr)
 	wg.Wait()
-}
 
-func (l *Logger) String() string {
-	buf := &bytes.Buffer{}
-	for _, log := range l.logs {
-		payload := fmt.Sprintf("%s\n%s\n", strings.Join(log.command, " "), log.out)
+	payload := out.String()
 
-		for _, v := range l.redactedValues {
-			payload = strings.Replace(payload, v, "******", -1)
-		}
-
-		buf.WriteString(payload)
+	for _, v := range l.redactedValues {
+		payload = strings.Replace(payload, v, "******", -1)
 	}
 
-	return buf.String()
+	l.entries = append(l.entries, LogEntry{
+		Command: command,
+		Out:     payload,
+	})
+}
+
+func (l *Logger) Entries() (entries []LogEntry) {
+	for _, entry := range l.entries {
+		entries = append(entries, entry)
+	}
+
+	return entries
 }

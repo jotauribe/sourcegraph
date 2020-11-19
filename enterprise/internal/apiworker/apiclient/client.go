@@ -57,11 +57,12 @@ func (c *Client) Dequeue(ctx context.Context, queueName string, job *Job) (bool,
 	return c.client.DoAndDecode(ctx, req, &job)
 }
 
-func (c *Client) SetLogContents(ctx context.Context, queueName string, jobID int, contents string) error {
-	req, err := c.makeRequest("POST", fmt.Sprintf("%s/setLogContents", queueName), SetLogRequest{
+func (c *Client) AddLogContents(ctx context.Context, queueName string, jobID int, command []string, out string) error {
+	req, err := c.makeRequest("POST", fmt.Sprintf("%s/addLogContents", queueName), AddLogRequest{
 		ExecutorName: c.options.ExecutorName,
 		JobID:        jobID,
-		Contents:     contents,
+		Command:      command,
+		Out:          out,
 	})
 	if err != nil {
 		return err

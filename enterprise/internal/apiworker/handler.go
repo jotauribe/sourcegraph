@@ -26,8 +26,8 @@ type handler struct {
 
 var _ workerutil.Handler = &handler{}
 
-// Handle clones the target code into a temporary directory, invokes the target indexer in a fresh
-// docker container, and uploads the results to the external frontend API.
+// Handle clones the target code into a temporary directory, invokes the target indexer in a
+// fresh docker container, and uploads the results to the external frontend API.
 func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workerutil.Record) error {
 	// 🚨 SECURITY: The job logger must be supplied with all sensitive values that may appear
 	// in a command constructed and run in the following function. Note that the command and
@@ -38,8 +38,10 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	logger := command.NewLogger(h.options.RedactedValues...)
 
 	defer func() {
-		if err := s.SetLogContents(ctx, record.RecordID(), logger.String()); err != nil {
-			log15.Warn("Failed to upload log for job", "id", record.RecordID(), "err", err)
+		for _, entry := range logger.Entries() {
+			if err := s.AddLogContents(ctx, record.RecordID(), entry.Command, entry.Out); err != nil {
+				log15.Warn("Failed to upload log for job", "id", record.RecordID(), "err", err)
+			}
 		}
 	}()
 
