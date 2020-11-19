@@ -139,7 +139,7 @@ type LSIFIndexResolver interface {
 	Indexer() string
 	IndexerArgs() []string
 	Outfile() *string
-	LogContents(ctx context.Context) (*string, error)
+	LogContents(ctx context.Context) ([]LogContentEntryResolver, error)
 	PlaceInQueue() *int32
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
@@ -148,6 +148,11 @@ type DockerStepResolver interface {
 	Root() string
 	Image() string
 	Commands() []string
+}
+
+type LogContentEntryResolver interface {
+	Command() []string
+	Out() string
 }
 
 type LSIFIndexConnectionResolver interface {

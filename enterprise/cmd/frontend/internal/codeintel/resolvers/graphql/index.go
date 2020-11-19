@@ -9,6 +9,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
+	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
 )
 
 type IndexResolver struct {
@@ -45,17 +46,22 @@ func (r *IndexResolver) DockerSteps() []gql.DockerStepResolver {
 	return steps
 }
 
-func (r *IndexResolver) LogContents(ctx context.Context) (*string, error) {
+func (r *IndexResolver) LogContents(ctx context.Context) ([]gql.LogContentEntryResolver, error) {
+	// 🚨 SECURITY: Only site admins can view executor log contents.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
-		if err == backend.ErrMustBeSiteAdmin {
-			return nil, nil
+		if err != backend.ErrMustBeSiteAdmin {
+			return nil, err
 		}
 
-		return nil, err
+		return nil, nil
 	}
 
-	// 🚨 SECURITY: Only site admins can view executor log contents.
-	return strPtr(r.index.LogContents), nil
+	var entries []gql.LogContentEntryResolver
+	for _, entry := range r.index.LogContents {
+		entries = append(entries, &logContentEntryResolver{entry})
+	}
+
+	return entries, nil
 }
 
 func (r *IndexResolver) ProjectRoot(ctx context.Context) (*gql.GitTreeEntryResolver, error) {
@@ -71,3 +77,12 @@ var _ gql.DockerStepResolver = &dockerStepResolver{}
 func (r *dockerStepResolver) Root() string       { return r.step.Root }
 func (r *dockerStepResolver) Image() string      { return r.step.Image }
 func (r *dockerStepResolver) Commands() []string { return r.step.Commands }
+
+type logContentEntryResolver struct {
+	entry dbworkerstore.LogContentEntry
+}
+
+var _ gql.LogContentEntryResolver = &logContentEntryResolver{}
+
+func (r *logContentEntryResolver) Command() []string { return r.entry.Command }
+func (r *logContentEntryResolver) Out() string       { return r.entry.Out }

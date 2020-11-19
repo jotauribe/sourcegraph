@@ -1,5 +1,6 @@
 import React, { FunctionComponent } from 'react'
 import { LsifIndexFields } from '../../../graphql-operations'
+import { ExecutorLogsEntry } from './ExecutorLogsEntry'
 
 export interface ExecutorLogsProps {
     index: LsifIndexFields
@@ -9,13 +10,12 @@ export interface ExecutorLogsProps {
 export const ExecutorLogs: FunctionComponent<ExecutorLogsProps> = ({ index, className }) => (
     <>
         <h3>Output logs</h3>
-
-        <div className={className}>
-            {index.logContents && (
-                <pre className="bg-code rounded p-3">
-                    <code dangerouslySetInnerHTML={{ __html: index.logContents }} />
-                </pre>
-            )}
-        </div>
+        {index.logContents.length === 0 ? (
+            <>No output logs</>
+        ) : (
+            index.logContents.map(entry => (
+                <ExecutorLogsEntry key={`${entry.command.join(' ')}${entry.out}`} entry={entry} className={className} />
+            ))
+        )}
     </>
 )
