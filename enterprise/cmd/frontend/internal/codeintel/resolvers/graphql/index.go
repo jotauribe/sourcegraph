@@ -9,7 +9,7 @@ import (
 	gql "github.com/sourcegraph/sourcegraph/cmd/frontend/graphqlbackend"
 	store "github.com/sourcegraph/sourcegraph/enterprise/internal/codeintel/stores/dbstore"
 	"github.com/sourcegraph/sourcegraph/internal/api"
-	dbworkerstore "github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store"
+	"github.com/sourcegraph/sourcegraph/internal/workerutil"
 )
 
 type IndexResolver struct {
@@ -79,10 +79,20 @@ func (r *dockerStepResolver) Image() string      { return r.step.Image }
 func (r *dockerStepResolver) Commands() []string { return r.step.Commands }
 
 type executionLogEntryResolver struct {
-	entry dbworkerstore.ExecutionLogEntry
+	entry workerutil.ExecutionLogEntry
 }
 
 var _ gql.ExecutionLogEntryResolver = &executionLogEntryResolver{}
 
+func (r *executionLogEntryResolver) Key() string       { return r.entry.Key }
 func (r *executionLogEntryResolver) Command() []string { return r.entry.Command }
+func (r *executionLogEntryResolver) ExitCode() int32   { return int32(r.entry.ExitCode) }
 func (r *executionLogEntryResolver) Out() string       { return r.entry.Out }
+
+func (r *executionLogEntryResolver) StartTime() gql.DateTime {
+	return gql.DateTime{Time: r.entry.StartTime}
+}
+
+func (r *executionLogEntryResolver) DurationMilliseconds() int32 {
+	return int32(r.entry.Duration.Milliseconds())
+}

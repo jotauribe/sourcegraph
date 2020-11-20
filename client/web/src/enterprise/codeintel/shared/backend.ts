@@ -40,8 +40,12 @@ export const lsifIndexFieldsFragment = gql`
         indexerArgs
         outfile
         executionLogs {
+            key
             command
+            startTime
+            exitCode
             out
+            durationMilliseconds
         }
         dockerSteps {
             root

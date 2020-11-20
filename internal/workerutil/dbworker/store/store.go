@@ -44,8 +44,8 @@ type Store interface {
 	// the next dequeue of this record can be performed.
 	Requeue(ctx context.Context, id int, after time.Time) error
 
-	// AddExecutionLogEntry updates the log contents of the record.
-	AddExecutionLogEntry(ctx context.Context, id int, command []string, out string) error
+	// AddExecutionLogEntry adds an executor log entry to the record.
+	AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
@@ -415,12 +415,9 @@ SET {state} = 'queued', {process_after} = %s
 WHERE {id} = %s
 `
 
-// AddExecutionLogEntry updates the log contents of the record.
-func (s *store) AddExecutionLogEntry(ctx context.Context, id int, command []string, out string) error {
-	payload, err := json.Marshal(ExecutionLogEntry{
-		Command: command,
-		Out:     out,
-	})
+// AddExecutionLogEntry adds an executor log entry to the record.
+func (s *store) AddExecutionLogEntry(ctx context.Context, id int, entry workerutil.ExecutionLogEntry) error {
+	payload, err := json.Marshal(entry)
 	if err != nil {
 		return err
 	}

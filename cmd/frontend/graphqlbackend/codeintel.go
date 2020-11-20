@@ -151,8 +151,12 @@ type DockerStepResolver interface {
 }
 
 type ExecutionLogEntryResolver interface {
+	Key() string
 	Command() []string
+	StartTime() DateTime
+	ExitCode() int32
 	Out() string
+	DurationMilliseconds() int32
 }
 
 type LSIFIndexConnectionResolver interface {

@@ -39,7 +39,7 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	defer func() {
 		for _, entry := range logger.Entries() {
-			if err := s.AddExecutionLogEntry(ctx, record.RecordID(), entry.Command, entry.Out); err != nil {
+			if err := s.AddExecutionLogEntry(ctx, record.RecordID(), entry); err != nil {
 				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "err", err)
 			}
 		}
@@ -112,8 +112,9 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}()
 
 	// Invoke each docker step sequentially
-	for _, dockerStep := range job.DockerSteps {
+	for i, dockerStep := range job.DockerSteps {
 		dockerStepCommand := command.CommandSpec{
+			Key:      fmt.Sprintf("step.docker.%d", i),
 			Image:    dockerStep.Image,
 			Commands: dockerStep.Commands,
 			Dir:      dockerStep.Dir,
@@ -126,8 +127,9 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	}
 
 	// Invoke each src-cli step sequentially
-	for _, cliStep := range job.CliSteps {
+	for i, cliStep := range job.CliSteps {
 		cliStepCommand := command.CommandSpec{
+			Key:      fmt.Sprintf("step.src.%d", i),
 			Commands: append([]string{"src"}, cliStep.Commands...),
 			Dir:      cliStep.Dir,
 			Env:      cliStep.Env,

@@ -7950,14 +7950,34 @@ A description of a command run inside the executor to during processing of the p
 """
 type ExecutionLogEntry {
     """
+    TODO
+    """
+    key: String!
+
+    """
     The arguments of the command run inside the executor.
     """
     command: [String!]!
 
     """
+    TODO
+    """
+    startTime: DateTime!
+
+    """
+    TODO
+    """
+    exitCode: Int!
+
+    """
     The combined stdout and stderr logs of the command.
     """
     out: String!
+
+    """
+    TODO
+    """
+    duration: Duration!
 }
 
 """

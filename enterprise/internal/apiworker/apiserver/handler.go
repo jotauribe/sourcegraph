@@ -131,13 +131,13 @@ func (m *handler) dequeue(ctx context.Context, queueName, executorName string) (
 
 // addExecutionLogEntry calls AddExecutionLogEntry for the given job. If the job identifier
 // is not known, a false-valued flag is returned.
-func (m *handler) addExecutionLogEntry(ctx context.Context, queueName, executorName string, jobID int, command []string, out string) error {
+func (m *handler) addExecutionLogEntry(ctx context.Context, queueName, executorName string, jobID int, entry workerutil.ExecutionLogEntry) error {
 	job, err := m.findMeta(queueName, executorName, jobID, false)
 	if err != nil {
 		return err
 	}
 
-	if err := job.tx.AddExecutionLogEntry(ctx, jobID, command, out); err != nil {
+	if err := job.tx.AddExecutionLogEntry(ctx, jobID, entry); err != nil {
 		return err
 	}
 

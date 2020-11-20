@@ -1,91 +1,79 @@
 package command
 
-import (
-	"bytes"
-	"fmt"
-	"io"
-	"sort"
-	"strconv"
-	"strings"
-	"testing"
+// func TestLogger(t *testing.T) {
+// 	logger := NewLogger("baz2", "BAR2")
 
-	"github.com/google/go-cmp/cmp"
-)
+// 	for i := 0; i < 3; i++ {
+// 		outReader, outWriter := io.Pipe()
+// 		errReader, errWriter := io.Pipe()
 
-func TestLogger(t *testing.T) {
-	logger := NewLogger("baz2", "BAR2")
+// 		go func() {
+// 			defer outWriter.Close()
+// 			defer errWriter.Close()
 
-	for i := 0; i < 3; i++ {
-		outReader, outWriter := io.Pipe()
-		errReader, errWriter := io.Pipe()
+// 			_, _ = io.Copy(outWriter, bytes.NewReader([]byte(fmt.Sprintf("foo%[1]d bar%[1]d\nbaz%[1]d", i+1))))
+// 			_, _ = io.Copy(errWriter, bytes.NewReader([]byte(fmt.Sprintf("FOO%[1]d BAR%[1]d\nBAZ%[1]d", i+1))))
+// 		}()
 
-		go func() {
-			defer outWriter.Close()
-			defer errWriter.Close()
+// 		logger.RecordCommand(
+// 			[]string{"test", strconv.FormatInt(int64(i)+1, 10)},
+// 			outReader,
+// 			errReader,
+// 		)
+// 	}
 
-			_, _ = io.Copy(outWriter, bytes.NewReader([]byte(fmt.Sprintf("foo%[1]d bar%[1]d\nbaz%[1]d", i+1))))
-			_, _ = io.Copy(errWriter, bytes.NewReader([]byte(fmt.Sprintf("FOO%[1]d BAR%[1]d\nBAZ%[1]d", i+1))))
-		}()
+// 	entries := logger.Entries()
+// 	if len(entries) != 3 {
+// 		t.Fatalf("unexpected number of entries. want=%d have=%d", 3, len(entries))
+// 	}
 
-		logger.RecordCommand(
-			[]string{"test", strconv.FormatInt(int64(i)+1, 10)},
-			outReader,
-			errReader,
-		)
-	}
+// 	expected1 := `
+// 		stderr: BAZ1
+// 		stderr: FOO1 BAR1
+// 		stdout: baz1
+// 		stdout: foo1 bar1
+// 		`
+// 	if diff := cmp.Diff([]string{"test", "1"}, entries[0].Command); diff != "" {
+// 		t.Errorf("unexpected command (-want +got):\n%s", diff)
+// 	}
+// 	if diff := cmp.Diff(normalizeLogs(expected1), normalizeLogs(entries[0].Out)); diff != "" {
+// 		t.Errorf("unexpected log output (-want +got):\n%s", diff)
+// 	}
 
-	entries := logger.Entries()
-	if len(entries) != 3 {
-		t.Fatalf("unexpected number of entries. want=%d have=%d", 3, len(entries))
-	}
+// 	expected2 := `
+// 		stderr: BAZ2
+// 		stderr: FOO2 ******
+// 		stdout: ******
+// 		stdout: foo2 bar2
+// 		`
+// 	if diff := cmp.Diff([]string{"test", "2"}, entries[1].Command); diff != "" {
+// 		t.Errorf("unexpected command (-want +got):\n%s", diff)
+// 	}
+// 	if diff := cmp.Diff(normalizeLogs(expected2), normalizeLogs(entries[1].Out)); diff != "" {
+// 		t.Errorf("unexpected log output (-want +got):\n%s", diff)
+// 	}
 
-	expected1 := `
-		stderr: BAZ1
-		stderr: FOO1 BAR1
-		stdout: baz1
-		stdout: foo1 bar1
-		`
-	if diff := cmp.Diff([]string{"test", "1"}, entries[0].Command); diff != "" {
-		t.Errorf("unexpected command (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(normalizeLogs(expected1), normalizeLogs(entries[0].Out)); diff != "" {
-		t.Errorf("unexpected log output (-want +got):\n%s", diff)
-	}
+// 	expected3 := `
+// 		stderr: BAZ3
+// 		stderr: FOO3 BAR3
+// 		stdout: baz3
+// 		stdout: foo3 bar3
+// 		`
+// 	if diff := cmp.Diff([]string{"test", "3"}, entries[2].Command); diff != "" {
+// 		t.Errorf("unexpected command (-want +got):\n%s", diff)
+// 	}
+// 	if diff := cmp.Diff(normalizeLogs(expected3), normalizeLogs(entries[2].Out)); diff != "" {
+// 		t.Errorf("unexpected log output (-want +got):\n%s", diff)
+// 	}
+// }
 
-	expected2 := `
-		stderr: BAZ2
-		stderr: FOO2 ******
-		stdout: ******
-		stdout: foo2 bar2
-		`
-	if diff := cmp.Diff([]string{"test", "2"}, entries[1].Command); diff != "" {
-		t.Errorf("unexpected command (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(normalizeLogs(expected2), normalizeLogs(entries[1].Out)); diff != "" {
-		t.Errorf("unexpected log output (-want +got):\n%s", diff)
-	}
+// func normalizeLogs(text string) (filtered []string) {
+// 	for _, line := range strings.Split(text, "\n") {
+// 		if line := strings.TrimSpace(line); line != "" {
+// 			filtered = append(filtered, line)
+// 		}
+// 	}
+// 	sort.Strings(filtered)
 
-	expected3 := `
-		stderr: BAZ3
-		stderr: FOO3 BAR3
-		stdout: baz3
-		stdout: foo3 bar3
-		`
-	if diff := cmp.Diff([]string{"test", "3"}, entries[2].Command); diff != "" {
-		t.Errorf("unexpected command (-want +got):\n%s", diff)
-	}
-	if diff := cmp.Diff(normalizeLogs(expected3), normalizeLogs(entries[2].Out)); diff != "" {
-		t.Errorf("unexpected log output (-want +got):\n%s", diff)
-	}
-}
-
-func normalizeLogs(text string) (filtered []string) {
-	for _, line := range strings.Split(text, "\n") {
-		if line := strings.TrimSpace(line); line != "" {
-			filtered = append(filtered, line)
-		}
-	}
-	sort.Strings(filtered)
-
-	return filtered
-}
+// 	return filtered
+// }

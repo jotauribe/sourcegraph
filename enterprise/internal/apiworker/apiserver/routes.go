@@ -52,7 +52,7 @@ func (h *handler) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Requ
 	var payload apiclient.AddExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
-		err := h.addExecutionLogEntry(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.Command, payload.Out)
+		err := h.addExecutionLogEntry(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.ExecutionLogEntry)
 		return http.StatusNoContent, nil, err
 	})
 }
