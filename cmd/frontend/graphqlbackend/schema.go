@@ -7915,7 +7915,7 @@ type LSIFIndex implements Node {
     outfile: String
 
     """
-    The output of the configured docker steps, indexer steps, and src-cli invocations.
+    The description of a command run inside the executor to during processing of this index.
     """
     executionLogs: [ExecutionLogEntry!]!
 
@@ -7946,16 +7946,16 @@ type DockerStep {
 }
 
 """
-TODO - rename, document
+A description of a command run inside the executor to during processing of the parent record..
 """
 type ExecutionLogEntry {
     """
-    TODO - rename, document
+    The arguments of the command run inside the executor.
     """
     command: [String!]!
 
     """
-    TODO - rename, document
+    The combined stdout and stderr logs of the command.
     """
     out: String!
 }

@@ -1,7 +1,12 @@
 import React, { FunctionComponent } from 'react'
 
+export interface ExecutionLog {
+    command: string[]
+    out: string
+}
+
 export interface ExecutionLogEntryProps {
-    entry: { command: string[]; out: string }
+    entry: ExecutionLog
     className?: string
 }
 
