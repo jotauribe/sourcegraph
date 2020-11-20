@@ -39,8 +39,8 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 
 	defer func() {
 		for _, entry := range logger.Entries() {
-			if err := s.AddLogContents(ctx, record.RecordID(), entry.Command, entry.Out); err != nil {
-				log15.Warn("Failed to upload log for job", "id", record.RecordID(), "err", err)
+			if err := s.AddExecutionLogEntry(ctx, record.RecordID(), entry.Command, entry.Out); err != nil {
+				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "err", err)
 			}
 		}
 	}()

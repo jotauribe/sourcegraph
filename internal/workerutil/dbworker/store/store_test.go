@@ -376,7 +376,7 @@ func TestStoreRequeue(t *testing.T) {
 	}
 }
 
-func TestStoreAddLogContents(t *testing.T) {
+func TestStoreAddExecutionLogEntry(t *testing.T) {
 	setupStoreTest(t)
 
 	if _, err := dbconn.Global.Exec(`
@@ -393,12 +393,12 @@ func TestStoreAddLogContents(t *testing.T) {
 		command := []string{"ls", "-a", fmt.Sprintf("%d", i+1)}
 		payload := fmt.Sprintf("<load payload %d>", i+1)
 
-		if err := testStore(defaultTestStoreOptions).AddLogContents(context.Background(), 1, command, payload); err != nil {
-			t.Fatalf("unexpected error addd: %s", err)
+		if err := testStore(defaultTestStoreOptions).AddExecutionLogEntry(context.Background(), 1, command, payload); err != nil {
+			t.Fatalf("unexpected error adding executor log entry: %s", err)
 		}
 	}
 
-	contents, err := basestore.ScanStrings(dbconn.Global.Query(`SELECT unnest(log_contents)::text FROM workerutil_test WHERE id = 1`))
+	contents, err := basestore.ScanStrings(dbconn.Global.Query(`SELECT unnest(execution_logs)::text FROM workerutil_test WHERE id = 1`))
 	if err != nil {
 		t.Fatalf("unexpected error scanning record: %s", err)
 	}
@@ -407,12 +407,12 @@ func TestStoreAddLogContents(t *testing.T) {
 	}
 
 	for i := 0; i < numEntries; i++ {
-		var entry LogContentEntry
+		var entry ExecutionLogEntry
 		if err := json.Unmarshal([]byte(contents[i]), &entry); err != nil {
 			t.Fatalf("unexpected error decoding entry: %s", err)
 		}
 
-		expected := LogContentEntry{
+		expected := ExecutionLogEntry{
 			Command: []string{"ls", "-a", fmt.Sprintf("%d", i+1)},
 			Out:     fmt.Sprintf("<load payload %d>", i+1),
 		}

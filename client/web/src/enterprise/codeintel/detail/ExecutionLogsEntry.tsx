@@ -1,11 +1,11 @@
 import React, { FunctionComponent } from 'react'
 
-export interface ExecutorLogsEntryProps {
+export interface ExecutionLogEntryProps {
     entry: { command: string[]; out: string }
     className?: string
 }
 
-export const ExecutorLogsEntry: FunctionComponent<ExecutorLogsEntryProps> = ({ entry, className }) => (
+export const ExecutionLogEntry: FunctionComponent<ExecutionLogEntryProps> = ({ entry, className }) => (
     <>
         <div className={className}>
             {/* TODO - better styles */}

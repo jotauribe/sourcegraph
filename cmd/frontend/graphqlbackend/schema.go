@@ -7915,9 +7915,9 @@ type LSIFIndex implements Node {
     outfile: String
 
     """
-    The output of the configured docker step, indexer, and src-cli invocations.
+    The output of the configured docker steps, indexer steps, and src-cli invocations.
     """
-    logContents: String
+    executionLogs: [ExecutionLogEntry!]!
 
     """
     The rank of this index in the queue. The value of this field is null if the index has been processed.
@@ -7943,6 +7943,21 @@ type DockerStep {
     The arguments to supply to the Docker container's entrypoint.
     """
     commands: [String!]!
+}
+
+"""
+TODO - rename, document
+"""
+type ExecutionLogEntry {
+    """
+    TODO - rename, document
+    """
+    command: [String!]!
+
+    """
+    TODO - rename, document
+    """
+    out: String!
 }
 
 """

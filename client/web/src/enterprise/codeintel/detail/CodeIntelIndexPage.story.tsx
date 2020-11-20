@@ -54,7 +54,7 @@ const index: Omit<LsifIndexFields, 'state' | 'queuedAt' | 'startedAt' | 'finishe
     indexer: 'lsif-tsc',
     indexerArgs: ['-p', '.'],
     outfile: 'index.lsif',
-    logContents: [
+    executionLogs: [
         {
             command: ['lsif-go', '-v'],
             out: 'Indexing\nUploading\nDone.\n',

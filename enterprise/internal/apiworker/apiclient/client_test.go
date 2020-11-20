@@ -77,10 +77,10 @@ func TestDequeueBadResponse(t *testing.T) {
 	})
 }
 
-func TestAddLogContents(t *testing.T) {
+func TestAddExecutionLogEntry(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/addLogContents",
+		expectedPath:     "/.executors/queue/test_queue/addExecutionLogEntry",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "command": ["ls", "-a"], "out": "<log payload>"}`,
@@ -89,16 +89,16 @@ func TestAddLogContents(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if err := client.AddLogContents(context.Background(), "test_queue", 42, []string{"ls", "-a"}, "<log payload>"); err != nil {
+		if err := client.AddExecutionLogEntry(context.Background(), "test_queue", 42, []string{"ls", "-a"}, "<log payload>"); err != nil {
 			t.Fatalf("unexpected error updating log contents: %s", err)
 		}
 	})
 }
 
-func TestAddLogContentsBadResponse(t *testing.T) {
+func TestAddExecutionLogEntryBadResponse(t *testing.T) {
 	spec := routeSpec{
 		expectedMethod:   "POST",
-		expectedPath:     "/.executors/queue/test_queue/addLogContents",
+		expectedPath:     "/.executors/queue/test_queue/addExecutionLogEntry",
 		expectedUsername: "test",
 		expectedPassword: "hunter2",
 		expectedPayload:  `{"executorName": "deadbeef", "jobId": 42, "command": ["ls", "-a"], "out": "<log payload>"}`,
@@ -107,7 +107,7 @@ func TestAddLogContentsBadResponse(t *testing.T) {
 	}
 
 	testRoute(t, spec, func(client *Client) {
-		if err := client.AddLogContents(context.Background(), "test_queue", 42, []string{"ls", "-a"}, "<log payload>"); err == nil {
+		if err := client.AddExecutionLogEntry(context.Background(), "test_queue", 42, []string{"ls", "-a"}, "<log payload>"); err == nil {
 			t.Fatalf("expected an error")
 		}
 	})

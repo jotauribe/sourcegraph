@@ -18,7 +18,7 @@ import { CodeIntelUploadOrIndexTimeline } from '../shared/CodeIntelUploadOrIndex
 import { deleteLsifIndex, fetchLsifIndex as defaultFetchLsifIndex } from './backend'
 import { CodeIntelIndexMeta } from './CodeIntelIndexMeta'
 import { DockerSteps } from './DockerSteps'
-import { ExecutorLogs } from './ExecutorLogs'
+import { ExecutionLogs } from './ExecutionLogs'
 
 export interface CodeIntelIndexPageProps extends RouteComponentProps<{ id: string }>, TelemetryProps {
     fetchLsifIndex?: typeof defaultFetchLsifIndex
@@ -127,7 +127,7 @@ export const CodeIntelIndexPage: FunctionComponent<CodeIntelIndexPageProps> = ({
                         ])}
                         className="mb-3"
                     />
-                    <ExecutorLogs index={indexOrError} />
+                    <ExecutionLogs index={indexOrError} />
                 </>
             )}
         </div>

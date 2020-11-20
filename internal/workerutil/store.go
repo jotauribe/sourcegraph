@@ -20,8 +20,8 @@ type Store interface {
 	// for all additional operations (MarkComplete, MarkErrored, and Done) while processing the given record.
 	Dequeue(ctx context.Context, extraArguments interface{}) (Record, Store, bool, error)
 
-	// AddLogContents adds a log entry to the record.
-	AddLogContents(ctx context.Context, id int, command []string, out string) error
+	// AddExecutionLogEntry adds an executor log entry to the record.
+	AddExecutionLogEntry(ctx context.Context, id int, command []string, out string) error
 
 	// MarkComplete attempts to update the state of the record to complete. This method returns a boolean flag indicating
 	// if the record was updated.

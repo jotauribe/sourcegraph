@@ -39,7 +39,7 @@ export const lsifIndexFieldsFragment = gql`
         indexer
         indexerArgs
         outfile
-        logContents {
+        executionLogs {
             command
             out
         }

@@ -17,25 +17,25 @@ import (
 // Index is a subset of the lsif_indexes table and stores both processed and unprocessed
 // records.
 type Index struct {
-	ID             int                             `json:"id"`
-	Commit         string                          `json:"commit"`
-	QueuedAt       time.Time                       `json:"queuedAt"`
-	State          string                          `json:"state"`
-	FailureMessage *string                         `json:"failureMessage"`
-	StartedAt      *time.Time                      `json:"startedAt"`
-	FinishedAt     *time.Time                      `json:"finishedAt"`
-	ProcessAfter   *time.Time                      `json:"processAfter"`
-	NumResets      int                             `json:"numResets"`
-	NumFailures    int                             `json:"numFailures"`
-	RepositoryID   int                             `json:"repositoryId"`
-	RepositoryName string                          `json:"repositoryName"`
-	DockerSteps    []DockerStep                    `json:"docker_steps"`
-	Root           string                          `json:"root"`
-	Indexer        string                          `json:"indexer"`
-	IndexerArgs    []string                        `json:"indexer_args"`
-	Outfile        string                          `json:"outfile"`
-	LogContents    []dbworkerstore.LogContentEntry `json:"log_contents"`
-	Rank           *int                            `json:"placeInQueue"`
+	ID             int                               `json:"id"`
+	Commit         string                            `json:"commit"`
+	QueuedAt       time.Time                         `json:"queuedAt"`
+	State          string                            `json:"state"`
+	FailureMessage *string                           `json:"failureMessage"`
+	StartedAt      *time.Time                        `json:"startedAt"`
+	FinishedAt     *time.Time                        `json:"finishedAt"`
+	ProcessAfter   *time.Time                        `json:"processAfter"`
+	NumResets      int                               `json:"numResets"`
+	NumFailures    int                               `json:"numFailures"`
+	RepositoryID   int                               `json:"repositoryId"`
+	RepositoryName string                            `json:"repositoryName"`
+	DockerSteps    []DockerStep                      `json:"docker_steps"`
+	Root           string                            `json:"root"`
+	Indexer        string                            `json:"indexer"`
+	IndexerArgs    []string                          `json:"indexer_args"`
+	Outfile        string                            `json:"outfile"`
+	ExecutionLogs  []dbworkerstore.ExecutionLogEntry `json:"execution_logs"`
+	Rank           *int                              `json:"placeInQueue"`
 }
 
 func (i Index) RecordID() int {
@@ -70,7 +70,7 @@ func scanIndexes(rows *sql.Rows, queryErr error) (_ []Index, err error) {
 			&index.Indexer,
 			pq.Array(&index.IndexerArgs),
 			&index.Outfile,
-			pq.Array(&index.LogContents),
+			pq.Array(&index.ExecutionLogs),
 			&index.Rank,
 		); err != nil {
 			return nil, err
@@ -129,7 +129,7 @@ func (s *Store) GetIndexByID(ctx context.Context, id int) (_ Index, _ bool, err 
 			u.indexer,
 			u.indexer_args,
 			u.outfile,
-			u.log_contents,
+			u.execution_logs,
 			s.rank
 		FROM lsif_indexes_with_repository_name u
 		LEFT JOIN (
@@ -212,7 +212,7 @@ func (s *Store) GetIndexes(ctx context.Context, opts GetIndexesOptions) (_ []Ind
 				u.indexer,
 				u.indexer_args,
 				u.outfile,
-				u.log_contents,
+				u.execution_logs,
 				s.rank
 			FROM lsif_indexes_with_repository_name u
 			LEFT JOIN (
@@ -299,7 +299,7 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 				indexer,
 				indexer_args,
 				outfile,
-				log_contents
+				execution_logs
 			) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
 			RETURNING id
 		`,
@@ -311,7 +311,7 @@ func (s *Store) InsertIndex(ctx context.Context, index Index) (_ int, err error)
 			index.Indexer,
 			pq.Array(index.IndexerArgs),
 			index.Outfile,
-			pq.Array(index.LogContents),
+			pq.Array(index.ExecutionLogs),
 		),
 	))
 
@@ -364,7 +364,7 @@ var indexColumnsWithNullRank = []*sqlf.Query{
 	sqlf.Sprintf(`u.indexer`),
 	sqlf.Sprintf(`u.indexer_args`),
 	sqlf.Sprintf(`u.outfile`),
-	sqlf.Sprintf(`u.log_contents`),
+	sqlf.Sprintf(`u.execution_logs`),
 	sqlf.Sprintf("NULL"),
 }
 

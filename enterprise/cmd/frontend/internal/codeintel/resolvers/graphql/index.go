@@ -46,7 +46,7 @@ func (r *IndexResolver) DockerSteps() []gql.DockerStepResolver {
 	return steps
 }
 
-func (r *IndexResolver) LogContents(ctx context.Context) ([]gql.LogContentEntryResolver, error) {
+func (r *IndexResolver) ExecutionLogs(ctx context.Context) ([]gql.ExecutionLogEntryResolver, error) {
 	// 🚨 SECURITY: Only site admins can view executor log contents.
 	if err := backend.CheckCurrentUserIsSiteAdmin(ctx); err != nil {
 		if err != backend.ErrMustBeSiteAdmin {
@@ -56,9 +56,9 @@ func (r *IndexResolver) LogContents(ctx context.Context) ([]gql.LogContentEntryR
 		return nil, nil
 	}
 
-	var entries []gql.LogContentEntryResolver
-	for _, entry := range r.index.LogContents {
-		entries = append(entries, &logContentEntryResolver{entry})
+	var entries []gql.ExecutionLogEntryResolver
+	for _, entry := range r.index.ExecutionLogs {
+		entries = append(entries, &executionLogEntryResolver{entry})
 	}
 
 	return entries, nil
@@ -78,11 +78,11 @@ func (r *dockerStepResolver) Root() string       { return r.step.Root }
 func (r *dockerStepResolver) Image() string      { return r.step.Image }
 func (r *dockerStepResolver) Commands() []string { return r.step.Commands }
 
-type logContentEntryResolver struct {
-	entry dbworkerstore.LogContentEntry
+type executionLogEntryResolver struct {
+	entry dbworkerstore.ExecutionLogEntry
 }
 
-var _ gql.LogContentEntryResolver = &logContentEntryResolver{}
+var _ gql.ExecutionLogEntryResolver = &executionLogEntryResolver{}
 
-func (r *logContentEntryResolver) Command() []string { return r.entry.Command }
-func (r *logContentEntryResolver) Out() string       { return r.entry.Out }
+func (r *executionLogEntryResolver) Command() []string { return r.entry.Command }
+func (r *executionLogEntryResolver) Out() string       { return r.entry.Out }

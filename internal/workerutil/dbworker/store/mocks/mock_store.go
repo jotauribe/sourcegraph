@@ -17,9 +17,9 @@ import (
 // github.com/sourcegraph/sourcegraph/internal/workerutil/dbworker/store)
 // used for unit testing.
 type MockStore struct {
-	// AddLogContentsFunc is an instance of a mock function object
-	// controlling the behavior of the method AddLogContents.
-	AddLogContentsFunc *StoreAddLogContentsFunc
+	// AddExecutionLogEntryFunc is an instance of a mock function object
+	// controlling the behavior of the method AddExecutionLogEntry.
+	AddExecutionLogEntryFunc *StoreAddExecutionLogEntryFunc
 	// DequeueFunc is an instance of a mock function object controlling the
 	// behavior of the method Dequeue.
 	DequeueFunc *StoreDequeueFunc
@@ -54,7 +54,7 @@ type MockStore struct {
 // return zero values for all results, unless overwritten.
 func NewMockStore() *MockStore {
 	return &MockStore{
-		AddLogContentsFunc: &StoreAddLogContentsFunc{
+		AddExecutionLogEntryFunc: &StoreAddExecutionLogEntryFunc{
 			defaultHook: func(context.Context, int, []string, string) error {
 				return nil
 			},
@@ -111,8 +111,8 @@ func NewMockStore() *MockStore {
 // methods delegate to the given implementation, unless overwritten.
 func NewMockStoreFrom(i store.Store) *MockStore {
 	return &MockStore{
-		AddLogContentsFunc: &StoreAddLogContentsFunc{
-			defaultHook: i.AddLogContents,
+		AddExecutionLogEntryFunc: &StoreAddExecutionLogEntryFunc{
+			defaultHook: i.AddExecutionLogEntry,
 		},
 		DequeueFunc: &StoreDequeueFunc{
 			defaultHook: i.Dequeue,
@@ -144,35 +144,35 @@ func NewMockStoreFrom(i store.Store) *MockStore {
 	}
 }
 
-// StoreAddLogContentsFunc describes the behavior when the AddLogContents
-// method of the parent MockStore instance is invoked.
-type StoreAddLogContentsFunc struct {
+// StoreAddExecutionLogEntryFunc describes the behavior when the
+// AddExecutionLogEntry method of the parent MockStore instance is invoked.
+type StoreAddExecutionLogEntryFunc struct {
 	defaultHook func(context.Context, int, []string, string) error
 	hooks       []func(context.Context, int, []string, string) error
-	history     []StoreAddLogContentsFuncCall
+	history     []StoreAddExecutionLogEntryFuncCall
 	mutex       sync.Mutex
 }
 
-// AddLogContents delegates to the next hook function in the queue and
+// AddExecutionLogEntry delegates to the next hook function in the queue and
 // stores the parameter and result values of this invocation.
-func (m *MockStore) AddLogContents(v0 context.Context, v1 int, v2 []string, v3 string) error {
-	r0 := m.AddLogContentsFunc.nextHook()(v0, v1, v2, v3)
-	m.AddLogContentsFunc.appendCall(StoreAddLogContentsFuncCall{v0, v1, v2, v3, r0})
+func (m *MockStore) AddExecutionLogEntry(v0 context.Context, v1 int, v2 []string, v3 string) error {
+	r0 := m.AddExecutionLogEntryFunc.nextHook()(v0, v1, v2, v3)
+	m.AddExecutionLogEntryFunc.appendCall(StoreAddExecutionLogEntryFuncCall{v0, v1, v2, v3, r0})
 	return r0
 }
 
-// SetDefaultHook sets function that is called when the AddLogContents
+// SetDefaultHook sets function that is called when the AddExecutionLogEntry
 // method of the parent MockStore instance is invoked and the hook queue is
 // empty.
-func (f *StoreAddLogContentsFunc) SetDefaultHook(hook func(context.Context, int, []string, string) error) {
+func (f *StoreAddExecutionLogEntryFunc) SetDefaultHook(hook func(context.Context, int, []string, string) error) {
 	f.defaultHook = hook
 }
 
 // PushHook adds a function to the end of hook queue. Each invocation of the
-// AddLogContents method of the parent MockStore instance inovkes the hook
-// at the front of the queue and discards it. After the queue is empty, the
-// default hook function is invoked for any future action.
-func (f *StoreAddLogContentsFunc) PushHook(hook func(context.Context, int, []string, string) error) {
+// AddExecutionLogEntry method of the parent MockStore instance inovkes the
+// hook at the front of the queue and discards it. After the queue is empty,
+// the default hook function is invoked for any future action.
+func (f *StoreAddExecutionLogEntryFunc) PushHook(hook func(context.Context, int, []string, string) error) {
 	f.mutex.Lock()
 	f.hooks = append(f.hooks, hook)
 	f.mutex.Unlock()
@@ -180,7 +180,7 @@ func (f *StoreAddLogContentsFunc) PushHook(hook func(context.Context, int, []str
 
 // SetDefaultReturn calls SetDefaultDefaultHook with a function that returns
 // the given values.
-func (f *StoreAddLogContentsFunc) SetDefaultReturn(r0 error) {
+func (f *StoreAddExecutionLogEntryFunc) SetDefaultReturn(r0 error) {
 	f.SetDefaultHook(func(context.Context, int, []string, string) error {
 		return r0
 	})
@@ -188,13 +188,13 @@ func (f *StoreAddLogContentsFunc) SetDefaultReturn(r0 error) {
 
 // PushReturn calls PushDefaultHook with a function that returns the given
 // values.
-func (f *StoreAddLogContentsFunc) PushReturn(r0 error) {
+func (f *StoreAddExecutionLogEntryFunc) PushReturn(r0 error) {
 	f.PushHook(func(context.Context, int, []string, string) error {
 		return r0
 	})
 }
 
-func (f *StoreAddLogContentsFunc) nextHook() func(context.Context, int, []string, string) error {
+func (f *StoreAddExecutionLogEntryFunc) nextHook() func(context.Context, int, []string, string) error {
 	f.mutex.Lock()
 	defer f.mutex.Unlock()
 
@@ -207,26 +207,26 @@ func (f *StoreAddLogContentsFunc) nextHook() func(context.Context, int, []string
 	return hook
 }
 
-func (f *StoreAddLogContentsFunc) appendCall(r0 StoreAddLogContentsFuncCall) {
+func (f *StoreAddExecutionLogEntryFunc) appendCall(r0 StoreAddExecutionLogEntryFuncCall) {
 	f.mutex.Lock()
 	f.history = append(f.history, r0)
 	f.mutex.Unlock()
 }
 
-// History returns a sequence of StoreAddLogContentsFuncCall objects
+// History returns a sequence of StoreAddExecutionLogEntryFuncCall objects
 // describing the invocations of this function.
-func (f *StoreAddLogContentsFunc) History() []StoreAddLogContentsFuncCall {
+func (f *StoreAddExecutionLogEntryFunc) History() []StoreAddExecutionLogEntryFuncCall {
 	f.mutex.Lock()
-	history := make([]StoreAddLogContentsFuncCall, len(f.history))
+	history := make([]StoreAddExecutionLogEntryFuncCall, len(f.history))
 	copy(history, f.history)
 	f.mutex.Unlock()
 
 	return history
 }
 
-// StoreAddLogContentsFuncCall is an object that describes an invocation of
-// method AddLogContents on an instance of MockStore.
-type StoreAddLogContentsFuncCall struct {
+// StoreAddExecutionLogEntryFuncCall is an object that describes an
+// invocation of method AddExecutionLogEntry on an instance of MockStore.
+type StoreAddExecutionLogEntryFuncCall struct {
 	// Arg0 is the value of the 1st argument passed to this method
 	// invocation.
 	Arg0 context.Context
@@ -246,13 +246,13 @@ type StoreAddLogContentsFuncCall struct {
 
 // Args returns an interface slice containing the arguments of this
 // invocation.
-func (c StoreAddLogContentsFuncCall) Args() []interface{} {
+func (c StoreAddExecutionLogEntryFuncCall) Args() []interface{} {
 	return []interface{}{c.Arg0, c.Arg1, c.Arg2, c.Arg3}
 }
 
 // Results returns an interface slice containing the results of this
 // invocation.
-func (c StoreAddLogContentsFuncCall) Results() []interface{} {
+func (c StoreAddExecutionLogEntryFuncCall) Results() []interface{} {
 	return []interface{}{c.Result0}
 }
 

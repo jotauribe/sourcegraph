@@ -51,7 +51,7 @@ func TestGetIndexByID(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
-		LogContents: []dbworkerstore.LogContentEntry{
+		ExecutionLogs: []dbworkerstore.ExecutionLogEntry{
 			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 		},
@@ -303,7 +303,7 @@ func TestInsertIndex(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
-		LogContents: []dbworkerstore.LogContentEntry{
+		ExecutionLogs: []dbworkerstore.ExecutionLogEntry{
 			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 		},
@@ -333,7 +333,7 @@ func TestInsertIndex(t *testing.T) {
 		Indexer:     "sourcegraph/lsif-tsc:latest",
 		IndexerArgs: []string{"lib/**/*.js", "test/**/*.js", "--allowJs", "--checkJs"},
 		Outfile:     "dump.lsif",
-		LogContents: []dbworkerstore.LogContentEntry{
+		ExecutionLogs: []dbworkerstore.ExecutionLogEntry{
 			{Command: []string{"op", "1"}, Out: "Indexing\nUploading\nDone with 1.\n"},
 			{Command: []string{"op", "2"}, Out: "Indexing\nUploading\nDone with 2.\n"},
 		},

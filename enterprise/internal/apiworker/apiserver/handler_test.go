@@ -136,7 +136,7 @@ func TestDequeueMaxTransactions(t *testing.T) {
 	}
 }
 
-func TestAddLogContents(t *testing.T) {
+func TestAddExecutionLogEntry(t *testing.T) {
 	store := workerstoremocks.NewMockStore()
 	store.DequeueWithIndependentTransactionContextFunc.SetDefaultReturn(testRecord{ID: 42}, store, true, nil)
 	recordTransformer := func(record workerutil.Record) (apiclient.Job, error) { return apiclient.Job{ID: 42}, nil }
@@ -157,14 +157,14 @@ func TestAddLogContents(t *testing.T) {
 		t.Fatalf("expected a job to be dequeued")
 	}
 
-	if err := handler.addLogContents(context.Background(), "test_queue", "deadbeef", job.ID, []string{"ls", "-a"}, "<log payload>"); err != nil {
+	if err := handler.addExecutionLogEntry(context.Background(), "test_queue", "deadbeef", job.ID, []string{"ls", "-a"}, "<log payload>"); err != nil {
 		t.Fatalf("unexpected error updating log contents: %s", err)
 	}
 
-	if value := len(store.AddLogContentsFunc.History()); value != 1 {
-		t.Fatalf("unexpected number of calls to AddLogContents. want=%d have=%d", 1, value)
+	if value := len(store.AddExecutionLogEntryFunc.History()); value != 1 {
+		t.Fatalf("unexpected number of calls to AddExecutionLogEntry. want=%d have=%d", 1, value)
 	}
-	call := store.AddLogContentsFunc.History()[0]
+	call := store.AddExecutionLogEntryFunc.History()[0]
 	if call.Arg1 != 42 {
 		t.Errorf("unexpected job identifier. want=%d have=%d", 42, call.Arg1)
 	}
@@ -176,16 +176,16 @@ func TestAddLogContents(t *testing.T) {
 	}
 }
 
-func TestAddLogContentsUnknownQueue(t *testing.T) {
+func TestAddExecutionLogEntryUnknownQueue(t *testing.T) {
 	options := Options{}
 	handler := newHandler(options, glock.NewMockClock())
 
-	if err := handler.addLogContents(context.Background(), "test_queue", "deadbjeef", 42, []string{"ls", "-a"}, "<log payload>"); err != ErrUnknownQueue {
+	if err := handler.addExecutionLogEntry(context.Background(), "test_queue", "deadbjeef", 42, []string{"ls", "-a"}, "<log payload>"); err != ErrUnknownQueue {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownQueue, err)
 	}
 }
 
-func TestAddLogContentsUnknownJob(t *testing.T) {
+func TestAddExecutionLogEntryUnknownJob(t *testing.T) {
 	options := Options{
 		QueueOptions: map[string]QueueOptions{
 			"test_queue": {Store: workerstoremocks.NewMockStore()},
@@ -193,7 +193,7 @@ func TestAddLogContentsUnknownJob(t *testing.T) {
 	}
 	handler := newHandler(options, glock.NewMockClock())
 
-	if err := handler.addLogContents(context.Background(), "test_queue", "deadbeef", 42, []string{"ls", "-a"}, "<log payload>"); err != ErrUnknownJob {
+	if err := handler.addExecutionLogEntry(context.Background(), "test_queue", "deadbeef", 42, []string{"ls", "-a"}, "<log payload>"); err != ErrUnknownJob {
 		t.Fatalf("unexpected error. want=%q have=%q", ErrUnknownJob, err)
 	}
 }

@@ -7910,7 +7910,7 @@ type LSIFIndex implements Node {
     """
     The output of the configured docker steps, indexer steps, and src-cli invocations.
     """
-    logContents: [LogContentsEntry!]!
+    executionLogs: [ExecutionLogEntry!]!
 
     """
     The rank of this index in the queue. The value of this field is null if the index has been processed.
@@ -7941,7 +7941,7 @@ type DockerStep {
 """
 TODO - rename, document
 """
-type LogContentsEntry {
+type ExecutionLogEntry {
     """
     TODO - rename, document
     """

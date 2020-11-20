@@ -56,7 +56,7 @@ const index: Omit<
     indexer: 'lsif-tsc',
     indexerArgs: ['-p', '.'],
     outfile: 'index.lsif',
-    logContents: [
+    executionLogs: [
         {
             command: ['lsif-go', '-v'],
             out: 'Indexing\nUploading\nDone.\n',

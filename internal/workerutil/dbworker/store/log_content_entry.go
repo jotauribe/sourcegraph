@@ -6,12 +6,12 @@ import (
 	"fmt"
 )
 
-type LogContentEntry struct {
+type ExecutionLogEntry struct {
 	Command []string `json:"command"`
 	Out     string   `json:"out"`
 }
 
-func (e *LogContentEntry) Scan(value interface{}) error {
+func (e *ExecutionLogEntry) Scan(value interface{}) error {
 	b, ok := value.([]byte)
 	if !ok {
 		return fmt.Errorf("value is not []byte: %T", value)
@@ -20,6 +20,6 @@ func (e *LogContentEntry) Scan(value interface{}) error {
 	return json.Unmarshal(b, &e)
 }
 
-func (e LogContentEntry) Value() (driver.Value, error) {
+func (e ExecutionLogEntry) Value() (driver.Value, error) {
 	return json.Marshal(e)
 }

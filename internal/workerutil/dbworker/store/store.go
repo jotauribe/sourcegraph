@@ -44,8 +44,8 @@ type Store interface {
 	// the next dequeue of this record can be performed.
 	Requeue(ctx context.Context, id int, after time.Time) error
 
-	// AddLogContents updates the log contents of the record.
-	AddLogContents(ctx context.Context, id int, command []string, out string) error
+	// AddExecutionLogEntry updates the log contents of the record.
+	AddExecutionLogEntry(ctx context.Context, id int, command []string, out string) error
 
 	// MarkComplete attempts to update the state of the record to complete. If this record has already been moved from
 	// the processing state to a terminal state, this method will have no effect. This method returns a boolean flag
@@ -87,7 +87,7 @@ type Options struct {
 	//   - process_after: timestamp with time zone
 	//   - num_resets: integer not null
 	//   - num_failures: integer not null
-	//   - log_contents: json[] (each entry has the form of `LogContentEntry`)
+	//   - execution_logs: json[] (each entry has the form of `ExecutionLogEntry`)
 	//
 	// The names of these columns may be customized based on the table name by adding a replacement
 	// pair in the AlternateColumnNames mapping.
@@ -204,7 +204,7 @@ var columnNames = []string{
 	"process_after",
 	"num_resets",
 	"num_failures",
-	"log_contents",
+	"execution_logs",
 }
 
 // DefaultColumnExpressions returns a slice of expressions for the default column name we expect.
@@ -415,9 +415,9 @@ SET {state} = 'queued', {process_after} = %s
 WHERE {id} = %s
 `
 
-// AddLogContents updates the log contents of the record.
-func (s *store) AddLogContents(ctx context.Context, id int, command []string, out string) error {
-	payload, err := json.Marshal(LogContentEntry{
+// AddExecutionLogEntry updates the log contents of the record.
+func (s *store) AddExecutionLogEntry(ctx context.Context, id int, command []string, out string) error {
+	payload, err := json.Marshal(ExecutionLogEntry{
 		Command: command,
 		Out:     out,
 	})
@@ -426,17 +426,17 @@ func (s *store) AddLogContents(ctx context.Context, id int, command []string, ou
 	}
 
 	return s.Exec(ctx, s.formatQuery(
-		addLogContentsQuery,
+		addExecutionLogEntryQuery,
 		quote(s.options.TableName),
 		string(payload),
 		id,
 	))
 }
 
-const addLogContentsQuery = `
--- source: internal/workerutil/store.go:AddLogContents
+const addExecutionLogEntryQuery = `
+-- source: internal/workerutil/store.go:AddExecutionLogEntry
 UPDATE %s
-SET {log_contents} = {log_contents} || %s::json
+SET {execution_logs} = {execution_logs} || %s::json
 WHERE {id} = %s
 `
 

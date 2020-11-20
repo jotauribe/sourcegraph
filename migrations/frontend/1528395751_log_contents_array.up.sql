@@ -1,26 +1,16 @@
 BEGIN;
 
---
 -- Drop dependent views
-
 DROP VIEW lsif_indexes_with_repository_name;
 DROP VIEW external_service_sync_jobs_with_next_sync_at;
 
---
--- Swap out column
+-- Create new columns
+ALTER TABLE lsif_indexes ADD COLUMN execution_logs json[];
+ALTER TABLE changesets ADD COLUMN execution_logs json[];
+ALTER TABLE external_service_sync_jobs ADD execution_logs json[];
 
-ALTER TABLE lsif_indexes ADD COLUMN temp json[];
-UPDATE lsif_indexes SET temp = (temp || json_build_object('command', '{}'::text[], 'out', log_contents)) WHERE log_contents IS NOT NULL;
-ALTER TABLE lsif_indexes DROP COLUMN log_contents;
-ALTER TABLE lsif_indexes RENAME COLUMN temp TO log_contents;
-
-ALTER TABLE changesets ADD COLUMN temp json[];
-ALTER TABLE changesets DROP COLUMN log_contents;
-ALTER TABLE changesets RENAME COLUMN temp TO log_contents;
-
-ALTER TABLE external_service_sync_jobs ADD COLUMN temp json[];
-ALTER TABLE external_service_sync_jobs DROP COLUMN log_contents;
-ALTER TABLE external_service_sync_jobs RENAME COLUMN temp TO log_contents;
+-- Back-fill log data into new column
+UPDATE lsif_indexes SET execution_logs = (execution_logs || json_build_object('command', '{}'::text[], 'out', log_contents)) WHERE log_contents IS NOT NULL;
 
 --
 -- Recreate views with new columns

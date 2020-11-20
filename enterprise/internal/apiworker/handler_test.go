@@ -94,7 +94,7 @@ func TestHandle(t *testing.T) {
 		t.Errorf("unexpected commands (-want +got):\n%s", diff)
 	}
 
-	if value := len(store.AddLogContentsFunc.History()); value != 1 {
-		t.Fatalf("expected AddLogContents to be called")
+	if value := len(store.AddExecutionLogEntryFunc.History()); value != 1 {
+		t.Fatalf("expected AddExecutionLogEntry to be called")
 	}
 }
