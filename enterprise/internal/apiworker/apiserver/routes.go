@@ -49,7 +49,7 @@ func (h *handler) handleDequeue(w http.ResponseWriter, r *http.Request) {
 
 // POST /{queueName}/addExecutionLogEntry
 func (h *handler) handleAddExecutionLogEntry(w http.ResponseWriter, r *http.Request) {
-	var payload apiclient.AddLogRequest
+	var payload apiclient.AddExecutionLogEntryRequest
 
 	h.wrapHandler(w, r, &payload, func() (int, interface{}, error) {
 		err := h.addExecutionLogEntry(r.Context(), mux.Vars(r)["queueName"], payload.ExecutorName, payload.JobID, payload.Command, payload.Out)

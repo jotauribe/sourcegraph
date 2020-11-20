@@ -1127,9 +1127,10 @@ func (s *DBStore) ListSyncJobs(ctx context.Context) ([]SyncJob, error) {
 			process_after,
 			num_resets,
 			num_failures,
+			execution_logs,
 			external_service_id,
 			next_sync_at
-		 FROM external_service_sync_jobs_with_next_sync_at
+		FROM external_service_sync_jobs_with_next_sync_at
 	`)
 	rows, err := s.Query(ctx, q)
 	if err != nil {
@@ -1143,6 +1144,10 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 	var jobs []SyncJob
 
 	for rows.Next() {
+		// required field for the sync worker, but
+		// the value is thrown out here
+		var executionLogs *[]interface{}
+
 		var job SyncJob
 		if err := rows.Scan(
 			&job.ID,
@@ -1153,6 +1158,7 @@ func scanJobs(rows *sql.Rows) ([]SyncJob, error) {
 			&job.ProcessAfter,
 			&job.NumResets,
 			&job.NumFailures,
+			&executionLogs,
 			&job.ExternalServiceID,
 			&job.NextSyncAt,
 		); err != nil {

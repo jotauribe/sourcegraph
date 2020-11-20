@@ -38,7 +38,10 @@ func (h *handler) Handle(ctx context.Context, s workerutil.Store, record workeru
 	logger := command.NewLogger(h.options.RedactedValues...)
 
 	defer func() {
+		fmt.Printf("A\n")
 		for _, entry := range logger.Entries() {
+			fmt.Printf("X: %v\n", entry)
+
 			if err := s.AddExecutionLogEntry(ctx, record.RecordID(), entry.Command, entry.Out); err != nil {
 				log15.Warn("Failed to upload executor log entry for job", "id", record.RecordID(), "err", err)
 			}

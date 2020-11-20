@@ -61,7 +61,7 @@ type DequeueRequest struct {
 	ExecutorName string `json:"executorName"`
 }
 
-type AddLogRequest struct {
+type AddExecutionLogEntryRequest struct {
 	ExecutorName string   `json:"executorName"`
 	JobID        int      `json:"jobId"`
 	Command      []string `json:"command"`

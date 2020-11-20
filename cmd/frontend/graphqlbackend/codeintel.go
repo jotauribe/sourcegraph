@@ -139,7 +139,7 @@ type LSIFIndexResolver interface {
 	Indexer() string
 	IndexerArgs() []string
 	Outfile() *string
-	ExecutionLogs(ctx context.Context) ([]executionLogEntryResolver, error)
+	ExecutionLogs(ctx context.Context) ([]ExecutionLogEntryResolver, error)
 	PlaceInQueue() *int32
 	ProjectRoot(ctx context.Context) (*GitTreeEntryResolver, error)
 }
@@ -150,7 +150,7 @@ type DockerStepResolver interface {
 	Commands() []string
 }
 
-type executionLogEntryResolver interface {
+type ExecutionLogEntryResolver interface {
 	Command() []string
 	Out() string
 }
